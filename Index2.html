@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padura | Live Stream</title>
+    <style>
+        /* --- CSS Styling --- */
+        :root {
+            --primary-glow: #e02396; 
+            --text-gold: #ffb700;    
+            --bg-overlay: rgba(10, 10, 15, 0.75);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-image: url('Padura.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .overlay {
+            background-color: var(--bg-overlay);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: var(--text-gold);
+            text-shadow: 0 0 10px rgba(255, 183, 0, 0.5), 
+                         0 0 20px rgba(255, 183, 0, 0.3);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; 
+            height: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #000;
+            box-shadow: 0 0 20px rgba(224, 35, 150, 0.4); 
+        }
+
+        /* The YouTube Player */
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* --- NEW: Waiting Overlay Styling --- */
+        .waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            /* Allows mouse clicks to pass through to the YouTube player beneath */
+            pointer-events: none; 
+        }
+
+        .waiting-overlay h2 {
+            color: var(--text-gold);
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px rgba(255, 183, 0, 0.5);
+            text-align: center;
+            padding: 0 1rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(224, 35, 150, 0.3);
+            border-top: 5px solid var(--primary-glow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 3rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1rem; }
+            .glass-container { padding: 1rem; }
+            .waiting-overlay h2 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <header>
+            <h1>Padura</h1>
+            <p class="subtitle">Official Live Stream</p>
+        </header>
+
+        <main class="glass-container">
+            <div class="video-wrapper">
+                
+                <div id="waiting-message" class="waiting-overlay">
+                    <div class="spinner" id="loading-spinner"></div>
+                    <h2 id="status-text">Waiting For Live Streaming...</h2>
+                </div>
+
+                <div id="live-player"></div>
+                
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="year"></span> Padura26. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // 1. Load the YouTube IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // 2. This function creates an <iframe> (and YouTube player) after the API code downloads.
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('live-player', {
+                videoId: 'YOUR_YOUTUBE_VIDEO_ID', // <--- REPLACE THIS WITH YOUR VIDEO ID
+                playerVars: {
+                    'autoplay': 1,
+                    'mute': 1, // Muted allows autoplay on most modern browsers
+                    'rel': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        // 3. The API calls this function when the player's state changes.
+        function onPlayerStateChange(event) {
+            const overlay = document.getElementById('waiting-message');
+            
+            // State 1 = PLAYING. If the video actually starts playing, remove the overlay.
+            if (event.data == YT.PlayerState.PLAYING) {
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 500); // Wait for fade out animation
+            } 
+            // Optional: If you want the message to come back if the stream buffers/pauses, 
+            // you could handle states like YT.PlayerState.BUFFERING here.
+        }
+
+        // 4. Handle errors (e.g., incorrect ID, stream deleted, or unavailable)
+        function onPlayerError(event) {
+            document.getElementById('status-text').innerText = "Live Stream Currently Unavailable";
+            document.getElementById('loading-spinner').style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>
